@@ -12,6 +12,7 @@ use App\Actions\Post\UpdatePost;
 use App\Enums\Media\Type as MediaType;
 use App\Enums\Post\Action as PostAction;
 use App\Enums\Post\CreatedVia;
+use App\Enums\Post\Status as PostStatus;
 use App\Http\Requests\Api\Post\AttachExistingAssetRequest;
 use App\Http\Requests\Api\Post\AttachMediaFromUrlRequest;
 use App\Http\Requests\Api\Post\StoreMediaRequest;
@@ -27,17 +28,70 @@ use App\Support\PostStatusRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Carbon;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 
 class PostController extends Controller
 {
+    /**
+     * Workspace posts, newest first.
+     *
+     * Optional `from` / `to` bound the window. Without them a reporting client
+     * that wants one week has to page through the workspace's entire history
+     * and discard almost all of it — every page a query, on an endpoint whose
+     * cost grows with the account's age rather than with the window asked for.
+     *
+     * The window is applied to when the post actually went out, falling back to
+     * when it is due: a published post's scheduled_at is its plan, published_at
+     * is the fact. Filtering on scheduled_at alone would place a post that was
+     * scheduled on Friday and published on Monday in the wrong week.
+     *
+     * Both bounds are inclusive whole days in the application timezone, which
+     * this application fixes to UTC — the calendar view buckets on the same
+     * basis, so a window requested here lines up with what the UI shows.
+     */
     public function index(Request $request): AnonymousResourceCollection
     {
-        $posts = $request->user()->currentWorkspace->posts()
-            ->with(['postPlatforms.socialAccount', 'user', 'labels'])
+        $workspace = $request->user()->currentWorkspace;
+
+        $validated = $request->validate([
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', 'after_or_equal:from'],
+            'status' => ['nullable', 'string', Rule::enum(PostStatus::class)],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+        ]);
+
+        $timezone = config('app.timezone');
+
+        $query = $workspace->posts()
+            ->with(['postPlatforms.socialAccount', 'user', 'labels']);
+
+        $occurredAt = 'COALESCE(published_at, scheduled_at)';
+
+        if (isset($validated['from'])) {
+            $query->whereRaw(
+                $occurredAt.' >= ?',
+                [Carbon::parse($validated['from'], $timezone)->startOfDay()->utc()],
+            );
+        }
+
+        if (isset($validated['to'])) {
+            $query->whereRaw(
+                $occurredAt.' <= ?',
+                [Carbon::parse($validated['to'], $timezone)->endOfDay()->utc()],
+            );
+        }
+
+        if (isset($validated['status'])) {
+            $query->where('status', $validated['status']);
+        }
+
+        $posts = $query
             ->latest('scheduled_at')
-            ->paginate(15);
+            ->paginate($validated['per_page'] ?? 15)
+            ->withQueryString();
 
         return PostResource::collection($posts);
     }

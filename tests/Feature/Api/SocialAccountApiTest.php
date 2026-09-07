@@ -30,8 +30,21 @@ it('lists social accounts', function () {
     $response->assertOk();
     $response->assertJsonCount(2);
     $response->assertJsonStructure([
-        '*' => ['id', 'platform', 'display_name', 'username', 'is_active', 'status'],
+        '*' => ['id', 'workspace_id', 'platform', 'display_name', 'username', 'is_active', 'status'],
     ]);
+});
+
+it('names the workspace each account belongs to', function () {
+    SocialAccount::factory()->create([
+        'workspace_id' => $this->workspace->id,
+        'platform' => Platform::LinkedIn,
+    ]);
+
+    // A consumer scoped to one workspace can verify tenancy itself rather than
+    // trusting that this endpoint filtered correctly.
+    $this->getJson(route('api.social-accounts.index'), [
+        'Authorization' => "Bearer {$this->plainToken}",
+    ])->assertOk()->assertJsonPath('0.workspace_id', $this->workspace->id);
 });
 
 it('does not expose tokens in social accounts list', function () {

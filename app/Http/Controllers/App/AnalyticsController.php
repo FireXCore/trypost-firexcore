@@ -4,20 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\App;
 
-use App\Enums\SocialAccount\Platform;
-use App\Exceptions\PlatformUnavailableException;
 use App\Http\Controllers\Controller;
 use App\Models\SocialAccount;
-use App\Services\Social\FacebookAnalytics;
-use App\Services\Social\InstagramAnalytics;
-use App\Services\Social\LinkedInPageAnalytics;
-use App\Services\Social\PinterestAnalytics;
-use App\Services\Social\Telegram\TelegramAnalytics;
-use App\Services\Social\ThreadsAnalytics;
-use App\Services\Social\TikTokAnalytics;
-use App\Services\Social\XAnalytics;
-use App\Services\Social\YouTubeAnalytics;
-use Illuminate\Http\Client\ConnectionException;
+use App\Services\Social\AccountAnalyticsResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -27,19 +16,6 @@ use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class AnalyticsController extends Controller
 {
-    private const SUPPORTED_PLATFORMS = [
-        Platform::TikTok,
-        Platform::Instagram,
-        Platform::InstagramFacebook,
-        Platform::Threads,
-        Platform::Facebook,
-        Platform::X,
-        Platform::LinkedInPage,
-        Platform::Pinterest,
-        Platform::YouTube,
-        Platform::Telegram,
-    ];
-
     public function index(Request $request): Response
     {
         $workspace = $request->user()->currentWorkspace;
@@ -48,7 +24,7 @@ class AnalyticsController extends Controller
 
         $accounts = $workspace->socialAccounts()
             ->where('is_active', true)
-            ->whereIn('platform', self::SUPPORTED_PLATFORMS)
+            ->whereIn('platform', AccountAnalyticsResolver::SUPPORTED_PLATFORMS)
             ->get()
             ->map(fn (SocialAccount $account) => [
                 'id' => $account->id,
@@ -80,31 +56,10 @@ class AnalyticsController extends Controller
     }
 
     /**
-     * An unreachable platform is not a server error — empty numbers beat a 500
-     * on a page the user just opened. Narrow on purpose: catching Throwable
-     * would render a defect as "this account has no activity".
-     *
      * @return array<int, array{label: string, value: int|string}>
      */
     private function metricsFor(SocialAccount $account, ?Carbon $since, ?Carbon $until): array
     {
-        try {
-            return match ($account->platform) {
-                Platform::TikTok => app(TikTokAnalytics::class)->getMetrics($account),
-                Platform::Instagram, Platform::InstagramFacebook => app(InstagramAnalytics::class)->getMetrics($account, $since, $until),
-                Platform::Threads => app(ThreadsAnalytics::class)->getMetrics($account, $since, $until),
-                Platform::Facebook => app(FacebookAnalytics::class)->getMetrics($account, $since, $until),
-                Platform::X => app(XAnalytics::class)->getMetrics($account, $since, $until),
-                Platform::LinkedInPage => app(LinkedInPageAnalytics::class)->getMetrics($account, $since, $until),
-                Platform::Pinterest => app(PinterestAnalytics::class)->getMetrics($account, $since, $until),
-                Platform::YouTube => app(YouTubeAnalytics::class)->getMetrics($account, $since, $until),
-                Platform::Telegram => app(TelegramAnalytics::class)->getMetrics($account),
-                default => [],
-            };
-        } catch (PlatformUnavailableException|ConnectionException $e) {
-            report($e);
-
-            return [];
-        }
+        return app(AccountAnalyticsResolver::class)->forAccount($account, $since, $until);
     }
 }

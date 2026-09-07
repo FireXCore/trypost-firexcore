@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\AccountAnalyticsController;
 use App\Http\Controllers\Api\ApiKeyController;
 use App\Http\Controllers\Api\AssetController;
 use App\Http\Controllers\Api\LabelController;
@@ -63,6 +64,11 @@ Route::middleware(['auth:api', 'workspace.token', 'throttle:api'])->group(functi
     Route::get('/social-accounts/{account}/channels', [SocialAccountController::class, 'channels'])
         ->middleware('throttle:60,1')
         ->name('api.social-accounts.channels');
+    // Account-level analytics. Each read can fan out to a third-party insights
+    // API, so it carries the same conservative throttle as boards/channels.
+    Route::get('/social-accounts/{account}/analytics', [AccountAnalyticsController::class, 'show'])
+        ->middleware('throttle:60,1')
+        ->name('api.social-accounts.analytics');
 
     // Webhooks
     Route::get('/webhooks', [WebhookController::class, 'index'])->name('api.webhooks.index');
