@@ -16,14 +16,6 @@ class SocialAccountResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            // The workspace this channel belongs to.
-            //
-            // Exposed so an API consumer can verify tenancy itself instead of
-            // trusting that this endpoint scoped correctly. The token already
-            // binds the request to one workspace, but a consumer attributing a
-            // brand's numbers to the wrong customer has no way to notice the
-            // mistake later — so it is given the means to check.
-            'workspace_id' => $this->workspace_id,
             'platform' => $this->platform?->value,
             'display_name' => $this->display_name,
             'username' => $this->username,

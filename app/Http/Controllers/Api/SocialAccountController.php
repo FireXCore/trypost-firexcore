@@ -13,6 +13,7 @@ use App\Exceptions\Social\ErrorCategory;
 use App\Exceptions\Social\PinterestPublishException;
 use App\Exceptions\TokenExpiredException;
 use App\Http\Resources\Api\SocialAccountResource;
+use App\Http\Resources\Api\WorkspaceScopedSocialAccountResource;
 use App\Models\SocialAccount;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -25,7 +26,10 @@ class SocialAccountController extends Controller
     {
         $accounts = $request->user()->currentWorkspace->socialAccounts()->orderBy('platform')->get();
 
-        return SocialAccountResource::collection($accounts);
+        // Carries workspace_id so a consumer can verify tenancy rather than
+        // assume it. `toggle()` keeps the plain resource: it acts on one
+        // account the caller already named, so there is nothing to verify.
+        return WorkspaceScopedSocialAccountResource::collection($accounts);
     }
 
     public function toggle(Request $request, SocialAccount $account): SocialAccountResource

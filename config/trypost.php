@@ -18,6 +18,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Build version
+    |--------------------------------------------------------------------------
+    |
+    | Reported by GET /api/engine so an operator console can show the build
+    | that is ACTUALLY running rather than the one it believes it deployed.
+    | Set it from the deploy tag; the default names this fork's release.
+    |
+    */
+
+    'version' => env('APP_VERSION', 'v1.0.9-firexcore'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Legal pages
     |--------------------------------------------------------------------------
     |

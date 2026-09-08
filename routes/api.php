@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\AccountAnalyticsController;
 use App\Http\Controllers\Api\ApiKeyController;
 use App\Http\Controllers\Api\AssetController;
+use App\Http\Controllers\Api\EngineController;
 use App\Http\Controllers\Api\LabelController;
 use App\Http\Controllers\Api\PlatformController;
 use App\Http\Controllers\Api\PostController;
@@ -38,6 +39,9 @@ Route::middleware(['auth:api', 'workspace.token', 'throttle:api'])->group(functi
 
     // Workspace
     Route::get('/workspace', [WorkspaceController::class, 'show'])->name('api.workspace.show');
+
+    // Engine identity (deployment-wide, still token-gated)
+    Route::get('/engine', [EngineController::class, 'show'])->name('api.engine.show');
 
     // Signatures
     Route::get('/signatures', [SignatureController::class, 'index'])->name('api.signatures.index');
