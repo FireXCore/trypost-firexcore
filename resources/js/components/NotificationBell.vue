@@ -44,7 +44,10 @@ const channelName = computed(() =>
         : null,
 );
 
-if (channelName.value) {
+if (
+    import.meta.env.VITE_REALTIME_ENABLED === 'true' &&
+    channelName.value
+) {
     useEcho(channelName.value, '.notification.created', (e: { notification: Notification }) => {
         const exists = notifications.value.some((n) => n.id === e.notification.id);
         if (exists) return;

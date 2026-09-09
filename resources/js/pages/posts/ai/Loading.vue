@@ -71,10 +71,14 @@ const progress = computed(() => {
 });
 
 const unsubscribe = () => {
-    if (subscribed) {
+    if (
+        subscribed &&
+        import.meta.env.VITE_REALTIME_ENABLED === 'true'
+    ) {
         echo().leave(`private-${props.channel}`);
-        subscribed = false;
     }
+
+    subscribed = false;
     if (generationTimeout) {
         clearTimeout(generationTimeout);
         generationTimeout = null;

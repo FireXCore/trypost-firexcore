@@ -54,10 +54,14 @@ export const useAiMediaRegeneration = (options: UseAiMediaRegenerationOptions) =
     const canSubmit = computed(() => normalizedInstruction.value.length > 0 && !isBusy.value);
 
     const unsubscribe = () => {
-        if (subscribedChannel) {
+        if (
+            subscribedChannel &&
+            import.meta.env.VITE_REALTIME_ENABLED === 'true'
+        ) {
             echo().leave(`private-${subscribedChannel}`);
-            subscribedChannel = null;
         }
+
+        subscribedChannel = null;
     };
 
     const clearRegenerationTimeout = () => {
@@ -109,6 +113,10 @@ export const useAiMediaRegeneration = (options: UseAiMediaRegenerationOptions) =
     };
 
     const subscribe = (channel: string): Promise<boolean> => {
+        if (import.meta.env.VITE_REALTIME_ENABLED !== 'true') {
+            return Promise.resolve(false);
+        }
+
         subscribedChannel = channel;
         status.value = 'processing';
 
