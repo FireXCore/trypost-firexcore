@@ -34,7 +34,10 @@ export const useAiStream = () => {
     };
 
     const unsubscribe = () => {
-        if (subscribedName) {
+        if (
+            subscribedName &&
+            import.meta.env.VITE_REALTIME_ENABLED === 'true'
+        ) {
             echo().leave(`private-${subscribedName}`);
         }
         subscribedName = null;
@@ -43,6 +46,11 @@ export const useAiStream = () => {
     const subscribe = (channelName: string): Promise<boolean> => {
         unsubscribe();
         reset();
+
+        if (import.meta.env.VITE_REALTIME_ENABLED !== 'true') {
+            return Promise.resolve(false);
+        }
+
         status.value = 'streaming';
         subscribedName = channelName;
 

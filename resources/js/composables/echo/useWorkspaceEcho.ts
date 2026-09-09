@@ -10,7 +10,7 @@ export const useWorkspaceEcho = <T = unknown>(
     const page = usePage();
     const workspaceId = (page.props.auth as Auth | undefined)?.currentWorkspace?.id;
 
-    if (!workspaceId) {
+    if (!workspaceId || import.meta.env.VITE_REALTIME_ENABLED !== 'true') {
         return;
     }
 

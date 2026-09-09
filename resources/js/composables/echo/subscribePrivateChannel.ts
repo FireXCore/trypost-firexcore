@@ -6,6 +6,10 @@ export const subscribePrivateChannel = (
     configure: (channel: ReturnType<ReturnType<typeof echo>['private']>) => void,
     timeoutMs = 5000,
 ): Promise<boolean> => {
+    if (import.meta.env.VITE_REALTIME_ENABLED !== 'true') {
+        return Promise.resolve(false);
+    }
+
     const channel = echo().private(channelName);
     configure(channel);
 

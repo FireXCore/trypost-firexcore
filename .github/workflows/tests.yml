@@ -135,7 +135,17 @@ jobs:
           redis-port: ${{ job.services.redis.ports['6379'] }}
 
       - name: Build assets
+        env:
+          VITE_REALTIME_ENABLED: "false"
         run: npm run build
+
+      - name: Upload production build
+        uses: actions/upload-artifact@v7
+        with:
+          name: trypost-public-build
+          path: public/build
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium

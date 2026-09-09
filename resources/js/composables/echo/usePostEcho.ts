@@ -5,5 +5,9 @@ export const usePostEcho = <T = unknown>(
     event: string | string[],
     callback: (payload: T) => void,
 ) => {
+    if (import.meta.env.VITE_REALTIME_ENABLED !== 'true') {
+        return;
+    }
+
     return useEcho<T>(`post.${postId}`, event, callback);
 };
