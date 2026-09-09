@@ -5,6 +5,7 @@ import {
     IconAlertTriangle,
     IconBolt,
     IconBrandDiscord,
+    IconBrandGithub,
     IconCalendar,
     IconChartBar,
     IconChevronRight,
@@ -199,6 +200,11 @@ const bottomNavItems = computed(() => [
         title: trans('sidebar.support.docs'),
         href: 'https://docs.trypost.it',
         icon: IconLifebuoy,
+    },
+    {
+        title: 'Source code',
+        href: 'https://github.com/FireXCore/trypost-firexcore',
+        icon: IconBrandGithub,
     },
 ]);
 </script>
